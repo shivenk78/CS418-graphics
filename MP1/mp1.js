@@ -44,6 +44,13 @@ const MAX_BLOCK_SCALE = 1.05;
 /** @global Minimum scaling for Block I */
 const MIN_BLOCK_SCALE = 0.95;
 
+/** @global Keeps track of the current y-position that will be "widened" */
+var vertPosToWiden = 1.0;
+/** @global y-range within which to widen the Block I */
+var vertRangeForWiden = 0.2;
+/** @global Factor by which to widen the Block I */
+var horizWidenFactor = 1.2;
+
 /**
  * Translates degrees to radians
  * @param {Number} degrees Degree input to function
@@ -176,13 +183,28 @@ function setupBuffers() {
     0.5, -0.75, 0.0, -0.5, -0.75, 0.0, -0.5, -0.5, 0.0,
     0.5, -0.75, 0.0, 0.5, -0.5, 0.0, -0.5, -0.5, 0.0,
   ];
-  //var num_vertices = int(3); //int(vertices.length / 3);
+
+  var vertexSize = 3;
+  var numVertices = vertices.length / vertexSize;
+
+  // CUSTOM DIRECT ANIMATION - top-to-bottom "widening" of the Block I
+
+  vertPosToWiden -= 0.005;
+  if (vertPosToWiden < -1) vertPosToWiden = 1;
+  for (var i = 0; i < numVertices; i++) {
+    var yPos = vertices[i * vertexSize + 1];
+    console.log("hi", yPos); //Math.abs(yPos - vertPosToWiden));
+    if (Math.abs(yPos - vertPosToWiden) < vertRangeForWiden) {
+      // modify x-coordinate to "widen" it
+      vertices[i * 3] *= horizWidenFactor;
+      console.log(vertices);
+    }
+  }
 
   // Populate the buffer with the position data.
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.DYNAMIC_DRAW);
-  vertexPositionBuffer.itemSize = 3;
-  vertexPositionBuffer.numberOfItems =
-    vertices.length / vertexPositionBuffer.itemSize;
+  vertexPositionBuffer.itemSize = vertexSize;
+  vertexPositionBuffer.numberOfItems = numVertices;
 
   // Binds the buffer that we just made to the vertex position attribute.
   gl.vertexAttribPointer(
@@ -204,7 +226,6 @@ function setupBuffers() {
   for (var i = 0; i < vertexPositionBuffer.numberOfItems; i++) {
     for (var j = 0; j < ORANGE.length; j++) colors.push(ORANGE[j]);
   }
-  console.log(colors);
 
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.DYNAMIC_DRAW);
   vertexColorBuffer.itemSize = 4;
@@ -285,7 +306,6 @@ function animate(currentTime) {
     ? 0.01 * speed * deltaTime
     : -0.01 * speed * deltaTime;
 
-  console.log(currBlockScale);
   var scaleVec = [currBlockScale, currBlockScale, currBlockScale];
   glMatrix.mat4.scale(modelViewMatrix, modelViewMatrix, scaleVec);
   setupBuffers();
