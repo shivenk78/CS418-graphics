@@ -75,7 +75,7 @@ function startup() {
 
   // Let the Terrain object set up its own buffers.
   //TODO: adjust div
-  myTerrain = new Terrain(50, -50, 50, -50, 50);
+  myTerrain = new Terrain(100, -50, 50, -50, 50);
   myTerrain.setupBuffers(shaderProgram);
 
   // Set the background color to sky blue (you can change this if you like).
