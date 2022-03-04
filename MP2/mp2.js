@@ -74,7 +74,8 @@ function startup() {
   setupShaders();
 
   // Let the Terrain object set up its own buffers.
-  myTerrain = new Terrain(16, -1, 1, -1, 1);
+  //TODO: adjust div
+  myTerrain = new Terrain(50, -50, 50, -50, 50);
   myTerrain.setupBuffers(shaderProgram);
 
   // Set the background color to sky blue (you can change this if you like).
@@ -237,8 +238,8 @@ function draw() {
 
   // Generate the view matrix using lookat.
   const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, -1.0);
-  const eyePt = glMatrix.vec3.fromValues(0.0, 0.0, 3.0);
-  const up = glMatrix.vec3.fromValues(0.0, 1.0, 0.0);
+  const eyePt = glMatrix.vec3.fromValues(100, 50, 100.0);
+  const up = glMatrix.vec3.fromValues(0.0, 0.0, 1.0);
   glMatrix.mat4.lookAt(modelViewMatrix, eyePt, lookAtPt, up);
 
   setMatrixUniforms();

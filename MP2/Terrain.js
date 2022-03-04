@@ -55,7 +55,7 @@ class Terrain {
     console.log("Terrain: Generated normals");
 
     // You can use this function for debugging your buffers:
-    // this.printBuffers();
+    //this.printBuffers();
   }
 
   //-------------------------------------------------------------------------
@@ -66,7 +66,9 @@ class Terrain {
    * @param {number} i The index of the vertex to set.
    */
   setVertex(v, i) {
-    // MP2: Implement this function!
+    this.positionData[i * 3] = v[0];
+    this.positionData[i * 3 + 1] = v[1];
+    this.positionData[i * 3 + 2] = v[2];
   }
 
   /**
@@ -75,32 +77,104 @@ class Terrain {
    * @param {number} i The index of the vertex to get.
    */
   getVertex(v, i) {
-    // MP2: Implement this function!
+    v[0] = this.positionData[i * 3];
+    v[1] = this.positionData[i * 3 + 1];
+    v[2] = this.positionData[i * 3 + 2];
   }
 
   /**
-   * This function does nothing.
+   * Generates a grid of vertices, populating it with triangles (2 per grid square).
    */
   generateTriangles() {
     // MP2: Implement the rest of this function!
 
+    var deltaX = (this.maxX - this.minX) / this.div;
+    var deltaY = (this.maxY - this.minY) / this.div;
+
+    for (var i = 0; i <= this.div; i++) {
+      for (var j = 0; j <= this.div; j++) {
+        this.positionData.push(this.minX + j * deltaX);
+        this.positionData.push(this.minY + i * deltaY);
+        this.positionData.push(0); // initial Z values are all 0
+      }
+    }
+
+    for (var xSq = 0; xSq < this.div; xSq++) {
+      for (var ySq = 0; ySq < this.div; ySq++) {
+        var botLeft = xSq * (this.div + 1) + ySq;
+        var botRight = botLeft + 1;
+        var topLeft = (xSq + 1) * (this.div + 1) + ySq;
+        var topRight = topLeft + 1;
+
+        // triangle 1 - lower right - /_|
+        this.faceData.push(botLeft, botRight, topRight);
+        // triangle 2 - upper left - |-/
+        this.faceData.push(botLeft, topRight, topLeft);
+      }
+    }
+
     // We'll need these to set up the WebGL buffers.
     this.numVertices = this.positionData.length / 3;
     this.numFaces = this.faceData.length / 3;
+
+    //this.printBuffers();
   }
 
   /**
-   * This function does nothing.
+   * This function shapes the terrain randomly using faulting.
    */
   shapeTerrain() {
-    // MP2: Implement this function!
+    for (var v = 0; v < this.numVertices; v++) {
+      this.positionData[v * 3 + 2] = Math.random();
+    }
   }
 
   /**
-   * This function does nothing.
+   * Calculate per-vertex normals for shading
    */
   calculateNormals() {
-    // MP2: Implement this function!
+    // populate normal data array
+    this.normalData = new Array(this.positionData.length).fill(0);
+
+    // calculate average normals
+    for (var t = 0; t < this.numFaces; t++) {
+      var tri = this.faceData.slice(3 * t, 3 * t + 3);
+
+      var v1 = [0, 0, 0];
+      this.getVertex(v1, tri[0]);
+
+      var v2 = [0, 0, 0];
+      this.getVertex(v2, tri[1]);
+
+      var v3 = [0, 0, 0];
+      this.getVertex(v3, tri[2]);
+
+      var normal = [0, 0, 0];
+      var left = [0, 0, 0];
+      glMatrix.vec3.sub(left, v2, v1);
+      var right = [0, 0, 0];
+      glMatrix.vec3.sub(right, v3, v1);
+      glMatrix.vec3.cross(normal, left, right);
+
+      // divide normal by 2, then add to running calculations
+      glMatrix.vec3.scale(normal, normal, 0.5);
+
+      for (var i = 0; i < 3; i++) {
+        this.normalData[3 * tri[i]] += normal[0];
+        this.normalData[3 * tri[i] + 1] += normal[1];
+        this.normalData[3 * tri[i] + 2] += normal[2];
+      }
+    }
+
+    // convert all to unit vectors
+    for (var t = 0; t < this.normalData.length / 3; t++) {
+      var mag = glMatrix.vec3.length(this.normalData.slice(3 * t, 3 * t + 3));
+      for (var i = 0; i < 3; i++) {
+        this.normalData[3 * t + i] *= 1 / mag;
+      }
+    }
+
+    console.log(this.normalData);
   }
 
   //-------------------------------------------------------------------------
@@ -187,6 +261,9 @@ class Terrain {
       new Uint32Array(this.faceData),
       gl.STATIC_DRAW
     );
+    // TODO: changed
+    // this.triangleIndexBuffer.itemSize = 3;
+    // this.triangleIndexBuffer.numItems = this.faceData.length / 3;
     this.triangleIndexBuffer.itemSize = 1;
     this.triangleIndexBuffer.numItems = this.faceData.length;
     console.log("Loaded ", this.triangleIndexBuffer.numItems, " triangles.");
@@ -279,4 +356,19 @@ class Terrain {
       );
     }
   }
+
+  // MY HELPERS
+  // /**
+  //  * Create a new GLMatrix Vec3 for a 3-array
+  //  * @param {Object} arr array of 3 points
+  //  */
+  // vec3FromArr(arr) {
+  //   return glMatrix.vec3.fromValues(arr[0], arr[1], arr[2]);
+  // }
+
+  // /**
+  //  * Create a 3-array from a vec3
+  //  * @param {Object} vec glMatrix vec3
+  //  */
+  // arrFromVec3(vec) {}
 } // class Terrain
