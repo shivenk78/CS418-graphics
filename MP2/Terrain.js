@@ -1,4 +1,5 @@
 /**
+ * Project author Shiven Kumar <shivenk2@illinois.edu>
  * @file Terrain.js - A simple 3D terrain model for WebGL
  * @author Ian Rudnick <itr2@illinois.edu>
  * @brief Starter code for CS 418 MP2 at the University of Illinois at
@@ -39,7 +40,7 @@ class Terrain {
     // Initial vertical delta-shift for faulting
     this.INIT_DELTA = 0.2;
     // Per-iteration falloff constant H for faulting delta
-    this.FAULT_H = 0.00005;
+    this.FAULT_H = 0.0005;
     // Max dist for distance-based faulting perturbation
     this.R_DIST = 0.5 * (this.maxX - this.minX);
 

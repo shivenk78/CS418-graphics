@@ -1,4 +1,5 @@
 /**
+ * Project author Shiven Kumar <shivenk2@illinois.edu>
  * @file MP2.js - A simple WebGL rendering engine
  * @author Ian Rudnick <itr2@illinois.edu>
  * @brief Starter code for CS 418 MP2 at the University of Illinois at
@@ -74,7 +75,6 @@ function startup() {
   setupShaders();
 
   // Let the Terrain object set up its own buffers.
-  //TODO: adjust div
   myTerrain = new Terrain(100, -50, 50, -50, 50);
   myTerrain.setupBuffers(shaderProgram);
 
