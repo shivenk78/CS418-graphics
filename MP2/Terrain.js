@@ -119,8 +119,10 @@ class Terrain {
 
         // triangle 1 - lower right - /_|
         this.faceData.push(botLeft, botRight, topRight);
+        //this.faceData.push(topRight, botRight, botLeft);
         // triangle 2 - upper left - |-/
         this.faceData.push(botLeft, topRight, topLeft);
+        //this.faceData.push(topLeft, topRight, botLeft);
       }
     }
 
@@ -229,9 +231,12 @@ class Terrain {
       for (var i = 0; i < 3; i++) {
         this.normalData[3 * t + i] *= 1 / mag;
       }
-    }
 
-    console.log(this.normalData);
+      // console.log(
+      //   "VERT PROJ OF NORM",
+      //   glMatrix.vec3.dot([0, 0, 1], this.normalData.slice(3 * t, 3 * t + 3))
+      // );
+    }
   }
 
   //-------------------------------------------------------------------------

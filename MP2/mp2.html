@@ -30,29 +30,22 @@ uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat3 normalMatrix;
 
-//uniform vec3 kAmbient;
-//uniform vec3 kDiffuse;
-uniform vec3 kSpecular;
-uniform float shininess;
-
-uniform vec3 lightPosition;
-uniform vec3 ambientLightColor;
-uniform vec3 diffuseLightColor;
-uniform vec3 specularLightColor;
-
 // MY CUSTOM VARS
 uniform float minElevation;
 uniform float maxElevation;
 
 out vec4 vertexColor;
 
+// Modified
+out vec3 vertexNormalView;
+out vec3 vertexPositionView;
+out vec3 kDiffuse;
+out vec3 kAmbient;
 
 void main(void) {
     // Normalize Z for color-coding
     float normZ = (vertexPosition.z - minElevation) / (maxElevation - minElevation);
-    vec3 kDiffuse;
-    vec3 kAmbient;
-    
+
     if (normZ < 0.2) { // water
         kDiffuse = vec3(0.0, 0.0, 100.0/255.0);
         kAmbient = vec3(0.0, 0.0, 100.0/255.0);
@@ -74,29 +67,10 @@ void main(void) {
     vec3 vertexPositionView =(modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
     vec3 vertexNormalView = normalize(normalMatrix * vertexNormal);
 
-    // The camera is at the origin in view coordinates
-    vec3 cameraPositionView = vec3(0.0, 0.0, 0.0);
-    
-    // Calculate the three other vectors we need: l, r, and v
-    vec3 lightVector = normalize(lightPosition - vertexPositionView);
-    vec3 reflectionVector = normalize(reflect(-lightVector, vertexNormalView));
-    vec3 viewVector = normalize(cameraPositionView - vertexPositionView);
-
-    // Calculate diffuse light weighting: (n dot l)
-    float diffuseWeight = max(dot(vertexNormalView, lightVector), 0.0);
-    
-    // Calculate the specular light weighting: (r dot v)^(shininess)
-    float rDotV = max(dot(reflectionVector, viewVector), 0.0);
-    float specularWeight = pow(rDotV, shininess);
-
-    // Sum up all three lighting components into the color for the vertex,
-    // and send it to the fragment shader.
-    vertexColor = vec4((  kAmbient * ambientLightColor
-                        + kDiffuse * diffuseLightColor * diffuseWeight
-                        + kSpecular * specularLightColor * specularWeight), 1.0);
-
     gl_Position =
         projectionMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
+
+    // send to frag shader
 }
 </script>
 
@@ -115,10 +89,45 @@ precision mediump float;
 in vec4 vertexColor;
 out vec4 fragmentColor;
 
+// Modified
+in vec3 vertexNormalView;
+in vec3 vertexPositionView;
+in vec3 kAmbient;
+in vec3 kDiffuse;
+
+uniform float shininess;
+uniform vec3 kSpecular;
+
+uniform vec3 lightPosition;
+uniform vec3 ambientLightColor;
+uniform vec3 diffuseLightColor;
+uniform vec3 specularLightColor;
 
 void main(void) {
-    // Interpolate the computed vertex color for each fragment.
-    fragmentColor = vertexColor;
+    // renormalize the normal
+    vec3 normal = normalize(vertexNormalView);
+
+    // The camera is at the origin in view coordinates
+    vec3 cameraPositionView = vec3(0.0, 0.0, 0.0);
+    
+    // Calculate the three other vectors we need: l, r, and v
+    vec3 lightVector = normalize(lightPosition - vertexPositionView);
+    vec3 reflectionVector = normalize(reflect(-lightVector, normal));
+    vec3 viewVector = normalize(cameraPositionView - vertexPositionView);
+
+    // Calculate diffuse light weighting: (n dot l)
+    float diffuseWeight = max(dot(normal, lightVector), 0.0);
+    
+    // Calculate the specular light weighting: (r dot v)^(shininess)
+    float rDotV = max(dot(reflectionVector, viewVector), 0.0);
+    float specularWeight = pow(rDotV, shininess);
+
+    // Sum up all three lighting components into the color for the vertex,
+    fragmentColor = vec4((  kAmbient * ambientLightColor
+                        + kDiffuse * diffuseLightColor * diffuseWeight
+                        + kSpecular * specularLightColor * specularWeight), 1.0);
+
+    
 }
 </script>
 

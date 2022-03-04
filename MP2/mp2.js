@@ -38,7 +38,7 @@ var shininess = 2;
 
 // Light parameters
 /** @global Light position in VIEW coordinates */
-var lightPosition = [0, 2, 2];
+var lightPosition = [0, 0, 0];
 /** @global Ambient light color/intensity for Phong reflection */
 var ambientLightColor = [0.1, 0.1, 0.1];
 /** @global Diffuse light color/intensity for Phong reflection */
