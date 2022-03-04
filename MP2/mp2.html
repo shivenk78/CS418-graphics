@@ -30,8 +30,8 @@ uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat3 normalMatrix;
 
-uniform vec3 kAmbient;
-uniform vec3 kDiffuse;
+//uniform vec3 kAmbient;
+//uniform vec3 kDiffuse;
 uniform vec3 kSpecular;
 uniform float shininess;
 
@@ -48,6 +48,25 @@ out vec4 vertexColor;
 
 
 void main(void) {
+    // Normalize Z for color-coding
+    float normZ = (vertexPosition.z - minElevation) / (maxElevation - minElevation);
+    vec3 kDiffuse;
+    vec3 kAmbient;
+    
+    if (normZ < 0.2) { // water
+        kDiffuse = vec3(0.0, 0.0, 100.0/255.0);
+        kAmbient = vec3(0.0, 0.0, 100.0/255.0);
+    } else if (normZ < 0.4) { // grass
+        kDiffuse = vec3(0.0, 100.0/255.0, 20.0/255.0);
+        kAmbient = vec3(0.0, 100.0/255.0, 20.0/255.0);
+    } else if (normZ < 0.7) { // mountain gray
+        kDiffuse = vec3(80.0/255.0, 80.0/255.0, 80.0/255.0);
+        kAmbient = vec3(80.0/255.0, 80.0/255.0, 80.0/255.0);
+    } else { // snow
+        kDiffuse = vec3(220.0/255.0, 220.0/255.0, 220.0/255.0);
+        kAmbient = vec3(220.0/255.0, 220.0/255.0, 220.0/255.0);
+    }
+
     // Transform the vertex position and normal to view coordinates
     vec3 vertexPositionView =(modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
     vec3 vertexNormalView = normalize(normalMatrix * vertexNormal);

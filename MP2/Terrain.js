@@ -39,7 +39,7 @@ class Terrain {
     // Initial vertical delta-shift for faulting
     this.INIT_DELTA = 0.5;
     // Per-iteration falloff constant H for faulting delta
-    this.FAULT_H = 0.01;
+    this.FAULT_H = 0.005;
     // Max dist for distance-based faulting perturbation
     this.R_DIST = 0.5 * (this.maxX - this.minX);
 
