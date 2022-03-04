@@ -32,6 +32,17 @@ class Terrain {
     this.maxX = maxX;
     this.maxY = maxY;
 
+    // MY CONSTANTS
+
+    // Number of iterations for faulting
+    this.FAULT_ITER = 100;
+    // Initial vertical delta-shift for faulting
+    this.INIT_DELTA = 0.5;
+    // Per-iteration falloff constant H for faulting delta
+    this.FAULT_H = 0.01;
+    // Max dist for distance-based faulting perturbation
+    this.R_DIST = 0.5 * (this.maxX - this.minX);
+
     // Allocate the vertex array
     this.positionData = [];
     // Allocate the normal array.
@@ -124,9 +135,55 @@ class Terrain {
    * This function shapes the terrain randomly using faulting.
    */
   shapeTerrain() {
-    for (var v = 0; v < this.numVertices; v++) {
-      this.positionData[v * 3 + 2] = Math.random();
+    var delta = this.INIT_DELTA;
+    for (var iter = 0; iter < this.FAULT_ITER; iter++) {
+      // Generate random plane with a point and a normal
+      var p = [
+        this.randRange(this.minX, this.maxX),
+        this.randRange(this.minY, this.maxY),
+        0,
+      ];
+
+      var randVec2 = [0, 0];
+      glMatrix.vec2.random(randVec2);
+      var n = [randVec2[0], randVec2[1], 0];
+
+      console.log(p, n);
+
+      // Raise and lower vertices
+      for (var v = 0; v < this.positionData.length / 3; v++) {
+        var b = [0, 0, 0];
+        this.getVertex(b, v);
+
+        var diff = [0, 0, 0];
+        glMatrix.vec3.sub(diff, b, p);
+        var dotTest = glMatrix.vec3.dot(diff, n);
+
+        // calc dist to plane
+        var c = -(n[1] * p[1] + n[0] * p[0]);
+        var planeDist =
+          Math.abs(n[0] * b[0] + n[1] * b[1] + c) /
+          Math.sqrt(n[0] * n[0] + n[1] * n[1]);
+
+        var scaledDelta =
+          planeDist < this.R_DIST
+            ? (1 - (planeDist / this.R_DIST) ** 2) ** 2 * delta
+            : 0;
+
+        if (dotTest < 0) {
+          b[2] -= scaledDelta;
+        } else if (dotTest > 0) {
+          b[2] += scaledDelta;
+        }
+        this.setVertex(b, v);
+      }
+
+      // update delta
+      delta = delta / Math.pow(2, this.FAULT_H);
+      if (iter % 10 == 0) console.log(delta);
     }
+
+    console.log(this.positionData);
   }
 
   /**
@@ -358,17 +415,12 @@ class Terrain {
   }
 
   // MY HELPERS
-  // /**
-  //  * Create a new GLMatrix Vec3 for a 3-array
-  //  * @param {Object} arr array of 3 points
-  //  */
-  // vec3FromArr(arr) {
-  //   return glMatrix.vec3.fromValues(arr[0], arr[1], arr[2]);
-  // }
-
-  // /**
-  //  * Create a 3-array from a vec3
-  //  * @param {Object} vec glMatrix vec3
-  //  */
-  // arrFromVec3(vec) {}
+  /**
+   * Generates a random float in the range [lower, upper)
+   * @param {*} lower
+   * @param {*} upper
+   */
+  randRange(lower, upper) {
+    return Math.random() * (upper - lower) + lower;
+  }
 } // class Terrain
