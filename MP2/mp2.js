@@ -261,7 +261,7 @@ function draw() {
   );
 
   // CUSTOM VARS
-  setCustomVars(myTerrain.getMinElevation(), myTerrain.getMaxElevation());
+  setElevationVars(myTerrain.getMinElevation(), myTerrain.getMaxElevation());
 
   // Draw the triangles, the wireframe, or both, based on the render selection.
   if (document.getElementById("polygon").checked) {
@@ -337,8 +337,12 @@ function setLightUniforms(a, d, s, loc) {
   gl.uniform3fv(shaderProgram.locations.lightPosition, loc);
 }
 
-//TODO: documentation comment once done
-function setCustomVars(minElevation, maxElevation) {
+/**
+ * Sends elevation information to the shader program.
+ * @param {*} minElevation lowest Z-height of terrain
+ * @param {*} maxElevation highest Z-height of terrain
+ */
+function setElevationVars(minElevation, maxElevation) {
   gl.uniform1f(shaderProgram.locations.minElevation, minElevation);
   gl.uniform1f(shaderProgram.locations.maxElevation, maxElevation);
 }
