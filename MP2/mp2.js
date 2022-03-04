@@ -214,6 +214,16 @@ function setupShaders() {
     shaderProgram,
     "specularLightColor"
   );
+
+  // MY CUSTOM VARS
+  shaderProgram.locations.minElevation = gl.getUniformLocation(
+    shaderProgram,
+    "minElevation"
+  );
+  shaderProgram.locations.maxElevation = gl.getUniformLocation(
+    shaderProgram,
+    "maxElevation"
+  );
 }
 
 /**
@@ -249,6 +259,9 @@ function draw() {
     specularLightColor,
     lightPosition
   );
+
+  // CUSTOM VARS
+  setCustomVars(myTerrain.getMinElevation(), myTerrain.getMaxElevation());
 
   // Draw the triangles, the wireframe, or both, based on the render selection.
   if (document.getElementById("polygon").checked) {
@@ -322,6 +335,12 @@ function setLightUniforms(a, d, s, loc) {
   gl.uniform3fv(shaderProgram.locations.diffuseLightColor, d);
   gl.uniform3fv(shaderProgram.locations.specularLightColor, s);
   gl.uniform3fv(shaderProgram.locations.lightPosition, loc);
+}
+
+//TODO: documentation comment once done
+function setCustomVars(minElevation, maxElevation) {
+  gl.uniform1f(shaderProgram.locations.minElevation, minElevation);
+  gl.uniform1f(shaderProgram.locations.maxElevation, maxElevation);
 }
 
 /**

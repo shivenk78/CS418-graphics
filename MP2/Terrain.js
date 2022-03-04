@@ -423,4 +423,27 @@ class Terrain {
   randRange(lower, upper) {
     return Math.random() * (upper - lower) + lower;
   }
+
+  /**
+   * Gets the current maximum elevation (Z-coord)
+   */
+  getMaxElevation() {
+    var max = Number.MIN_VALUE;
+    for (var v = 0; v < this.positionData.length / 3; v++) {
+      if (this.positionData[3 * v + 2] > max)
+        max = this.positionData[3 * v + 2];
+    }
+    return max;
+  }
+  /**
+   * Gets the current minimum elevation (Z-coord)
+   */
+  getMinElevation() {
+    var min = Number.MAX_VALUE;
+    for (var v = 0; v < this.positionData.length / 3; v++) {
+      if (this.positionData[3 * v + 2] < min)
+        min = this.positionData[3 * v + 2];
+    }
+    return min;
+  }
 } // class Terrain
