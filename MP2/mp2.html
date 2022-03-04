@@ -59,7 +59,10 @@ void main(void) {
     } else if (normZ < 0.4) { // grass
         kDiffuse = vec3(0.0, 100.0/255.0, 20.0/255.0);
         kAmbient = vec3(0.0, 100.0/255.0, 20.0/255.0);
-    } else if (normZ < 0.7) { // mountain gray
+    } else if (normZ < 0.6) { // dirt
+        kDiffuse = vec3(120.0/255.0, 90.0/255.0, 50.0/255.0);
+        kAmbient = vec3(120.0/255.0, 90.0/255.0, 50.0/255.0);
+    } else if (normZ < 0.8) { // mountain gray
         kDiffuse = vec3(80.0/255.0, 80.0/255.0, 80.0/255.0);
         kAmbient = vec3(80.0/255.0, 80.0/255.0, 80.0/255.0);
     } else { // snow

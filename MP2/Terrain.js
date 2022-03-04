@@ -35,11 +35,11 @@ class Terrain {
     // MY CONSTANTS
 
     // Number of iterations for faulting
-    this.FAULT_ITER = 200;
+    this.FAULT_ITER = 250;
     // Initial vertical delta-shift for faulting
-    this.INIT_DELTA = 0.3;
+    this.INIT_DELTA = 0.2;
     // Per-iteration falloff constant H for faulting delta
-    this.FAULT_H = 0.005;
+    this.FAULT_H = 0.00005;
     // Max dist for distance-based faulting perturbation
     this.R_DIST = 0.5 * (this.maxX - this.minX);
 
