@@ -54,7 +54,7 @@ var kEdgeWhite = [0.7, 0.7, 0.7];
 
 // MP3 NEW VARS
 /** @global Initial camera position */
-var camInitialPosition = [0, 0, 0];
+var camInitialPosition = [0, 0, 5];
 /** @global Camera position */
 var camPosition = camInitialPosition;
 /** @global Camera orientation QUATERNION */
@@ -73,6 +73,8 @@ var keys = {};
 var densitySlider;
 /** @global The Fog Density value display box */
 var densityBox;
+/** @global The default Fog Color */
+const FOG_COLOR = [1, 1, 1, 1];
 
 /**
  * Translates degrees to radians
@@ -259,6 +261,16 @@ function setupShaders() {
     shaderProgram,
     "maxElevation"
   );
+
+  // FOG VARS
+  shaderProgram.locations.fogColor = gl.getUniformLocation(
+    shaderProgram,
+    "fogColor"
+  );
+  shaderProgram.locations.fogDensity = gl.getUniformLocation(
+    shaderProgram,
+    "fogDensity"
+  );
 }
 
 /**
@@ -298,6 +310,9 @@ function draw() {
   // CUSTOM VARS
   var maxElev = myTerrain.getMaxElevation();
   setElevationVars(myTerrain.getMinElevation(), maxElev);
+
+  // FOG
+  setFogVars(FOG_COLOR, densitySlider.value);
 
   // Draw the triangles, the wireframe, or both, based on the render selection.
   if (document.getElementById("polygon").checked) {
@@ -383,6 +398,16 @@ function setLightUniforms(a, d, s, loc) {
 function setElevationVars(minElevation, maxElevation) {
   gl.uniform1f(shaderProgram.locations.minElevation, minElevation);
   gl.uniform1f(shaderProgram.locations.maxElevation, maxElevation);
+}
+
+/**
+ * Sends fog information to the shader program.
+ * @param {*} fogColor color for fog
+ * @param {*} fogDensity density for fog (0 if off)
+ */
+function setFogVars(fogColor, fogDensity) {
+  gl.uniform1f(shaderProgram.locations.fogColor, fogColor);
+  gl.uniform1f(shaderProgram.locations.fogDensity, fogDensity);
 }
 
 /**
