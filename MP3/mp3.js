@@ -69,6 +69,11 @@ const camInitialDir = [1, 0, 0];
 /** @global Dictionary of pressed keys */
 var keys = {};
 
+/** @global The Fog Density slider */
+var densitySlider;
+/** @global The Fog Density value display box */
+var densityBox;
+
 /**
  * Translates degrees to radians
  * @param {Number} degrees Degree input to function
@@ -95,12 +100,21 @@ function startup() {
   // Compile and link the shader program.
   setupShaders();
 
+  // Setup the slider
+  densitySlider = document.getElementById("fogDensity");
+  densityBox = document.getElementById("densityLabel");
+
+  densityBox.innerHTML = densitySlider.value;
+  densitySlider.oninput = function () {
+    densityBox.innerHTML = this.value;
+  };
+
   // Let the Terrain object set up its own buffers.
   myTerrain = new Terrain(100, -50, 50, -50, 50);
   myTerrain.setupBuffers(shaderProgram);
 
   // Set the background color to sky blue (you can change this if you like).
-  gl.clearColor(0.82, 0.93, 0.99, 1.0);
+  gl.clearColor(0.9, 0.9, 0.9, 1.0);
 
   gl.enable(gl.DEPTH_TEST);
   requestAnimationFrame(animate);
