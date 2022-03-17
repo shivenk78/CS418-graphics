@@ -1,0 +1,150 @@
+<!DOCTYPE HTML>
+<html lang="en">
+
+<head>
+    <title>MP2: Terrain</title>
+    <meta charset="utf-8">
+</head>
+
+<!-- If you add additional .js files, be sure to add them here. -->
+<script src="gl-matrix-min.js"></script>
+<script src="Terrain.js"></script>
+<script src="mp3.js"></script>
+
+<!-- MP2: Modify the shaders to implement Phong shading instead of Gourand! -->
+<script id="shader-vs" type="x-shader/x-vertex">#version 300 es
+// Vertex Shader
+// Implements Gourand shading. See the lecture on "Basic Shading" for details.
+
+// Use high-precision floats if available on this device.
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+in vec3 vertexPosition;
+in vec3 vertexNormal;
+
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat3 normalMatrix;
+
+// MY ELEVATION VARS
+uniform float minElevation;
+uniform float maxElevation;
+
+out vec4 vertexColor;
+
+// Modified
+out vec3 vertexNormalView;
+out vec3 vertexPositionView;
+out vec3 kDiffuse;
+out vec3 kAmbient;
+
+void main(void) {
+    // Normalize Z for color-coding
+    float normZ = (vertexPosition.z - minElevation) / (maxElevation - minElevation);
+
+    if (normZ < 0.2) { // water
+        kDiffuse = vec3(0.0, 0.0, 100.0/255.0);
+        kAmbient = vec3(0.0, 0.0, 100.0/255.0);
+    } else if (normZ < 0.4) { // grass
+        kDiffuse = vec3(0.0, 100.0/255.0, 20.0/255.0);
+        kAmbient = vec3(0.0, 100.0/255.0, 20.0/255.0);
+    } else if (normZ < 0.6) { // dirt
+        kDiffuse = vec3(120.0/255.0, 90.0/255.0, 50.0/255.0);
+        kAmbient = vec3(120.0/255.0, 90.0/255.0, 50.0/255.0);
+    } else if (normZ < 0.8) { // mountain gray
+        kDiffuse = vec3(80.0/255.0, 80.0/255.0, 80.0/255.0);
+        kAmbient = vec3(80.0/255.0, 80.0/255.0, 80.0/255.0);
+    } else { // snow
+        kDiffuse = vec3(220.0/255.0, 220.0/255.0, 220.0/255.0);
+        kAmbient = vec3(220.0/255.0, 220.0/255.0, 220.0/255.0);
+    }
+
+    // Transform the vertex position and normal to view coordinates
+    vertexPositionView =(modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
+    vertexNormalView = normalize(normalMatrix * vertexNormal);
+
+    gl_Position =
+        projectionMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
+
+    // send to frag shader
+}
+</script>
+
+<!-- MP2: Modify the shaders to implement Phong shading instead of Gourand! -->
+<script id="shader-fs" type="x-shader/x-fragment">#version 300 es
+// Fragment Shader
+// Implements Gourand shading. See the lecture on "Basic Shading" for details.
+
+// Use high-precision floats if available on this device.
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+in vec4 vertexColor;
+out vec4 fragmentColor;
+
+// Modified
+in vec3 vertexNormalView;
+in vec3 vertexPositionView;
+in vec3 kAmbient;
+in vec3 kDiffuse;
+
+uniform float shininess;
+uniform vec3 kSpecular;
+
+uniform vec3 lightPosition;
+uniform vec3 ambientLightColor;
+uniform vec3 diffuseLightColor;
+uniform vec3 specularLightColor;
+
+void main(void) {
+    // renormalize the normal
+    vec3 normal = normalize(vertexNormalView);
+
+    // The camera is at the origin in view coordinates
+    vec3 cameraPositionView = vec3(0.0, 0.0, 0.0);
+    
+    // Calculate the three other vectors we need: l, r, and v
+    vec3 lightVector = normalize(lightPosition - vertexPositionView);
+    vec3 reflectionVector = normalize(reflect(-lightVector, normal));
+    vec3 viewVector = normalize(cameraPositionView - vertexPositionView);
+
+    // Calculate diffuse light weighting: (n dot l)
+    float diffuseWeight = max(dot(normal, lightVector), 0.0);
+    
+    // Calculate the specular light weighting: (r dot v)^(shininess)
+    float rDotV = max(dot(reflectionVector, viewVector), 0.0);
+    float specularWeight = pow(rDotV, shininess);
+
+    // Sum up all three lighting components into the color for the vertex,
+    fragmentColor = vec4((  kAmbient * ambientLightColor
+                        + kDiffuse * diffuseLightColor * diffuseWeight
+                        + kSpecular * specularLightColor * specularWeight), 1.0);
+
+    
+}
+</script>
+
+
+<body onload="startup();">
+    <canvas id="glCanvas" width="1200" height="600"></canvas>
+
+    <form id="input_form">
+        <fieldset>
+            <legend>Rendering Options</legend>
+            <div>
+                <input type="radio" name="primitive" id="wireframe" value="wireframe"> Wireframe
+                <input type="radio" name="primitive" id="polygon" value="polygon" checked> Polygon
+                <input type="radio" name="primitive" id="wirepoly" value="wirepoly"> Polygon with Edges
+            </div>
+        </fieldset>
+    </form>
+</body>
+
+</html>
