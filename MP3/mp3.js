@@ -20,6 +20,13 @@ var shaderProgram;
 /** @global An object holding the geometry for your 3D terrain */
 var myTerrain;
 
+/** @global The Model matrix */
+var modelViewMatrix = glMatrix.mat4.create();
+/** @global The Projection matrix */
+var projectionMatrix = glMatrix.mat4.create();
+/** @global The Normal matrix */
+var normalMatrix = glMatrix.mat3.create();
+
 // Material parameters
 /** @global Ambient material color/intensity for Phong reflection */
 var kAmbient = [227 / 255, 191 / 255, 76 / 255];
@@ -46,14 +53,21 @@ var kEdgeBlack = [0.0, 0.0, 0.0];
 var kEdgeWhite = [0.7, 0.7, 0.7];
 
 // MP3 NEW VARS
+/** @global Initial camera position */
+var camInitialPosition = [0, 0, 0];
 /** @global Camera position */
-var camPosition = [0, 0, 0];
+var camPosition = camInitialPosition;
 /** @global Camera orientation QUATERNION */
 var camOrientation = glMatrix.quat.create();
 /** @global Current camera speed */
-var camSpeed = 0.5;
+var camSpeed = 0.01;
+/** @global Camera speed delta for keypresses */
+const camDeltaSpeed = 0.005;
 /** @global Initial direction of camera */
-var camInitialDir = glMatrix.vec3.create();
+const camInitialDir = [1, 0, 0];
+
+/** @global Dictionary of pressed keys */
+var keys = {};
 
 /**
  * Translates degrees to radians
@@ -73,6 +87,10 @@ function startup() {
   // Set up the canvas with a WebGL context.
   canvas = document.getElementById("glCanvas");
   gl = createGLContext(canvas);
+
+  // Register event handlers
+  document.onkeydown = keyDown;
+  document.onkeyup = keyUp;
 
   // Compile and link the shader program.
   setupShaders();
@@ -250,10 +268,10 @@ function draw() {
   );
 
   // Generate the view matrix using lookat.
-  const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, -1.0);
-  const eyePt = glMatrix.vec3.fromValues(100, 50, 100.0);
-  const up = glMatrix.vec3.fromValues(0.0, 0.0, 1.0);
-  glMatrix.mat4.lookAt(modelViewMatrix, eyePt, lookAtPt, up);
+  // const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, -1.0);
+  // const eyePt = glMatrix.vec3.fromValues(100, 50, 100.0);
+  // const up = glMatrix.vec3.fromValues(0.0, 0.0, 1.0);
+  // glMatrix.mat4.lookAt(modelViewMatrix, eyePt, lookAtPt, up);
 
   setMatrixUniforms();
   setLightUniforms(
@@ -264,7 +282,8 @@ function draw() {
   );
 
   // CUSTOM VARS
-  setElevationVars(myTerrain.getMinElevation(), myTerrain.getMaxElevation());
+  var maxElev = myTerrain.getMaxElevation();
+  setElevationVars(myTerrain.getMinElevation(), maxElev);
 
   // Draw the triangles, the wireframe, or both, based on the render selection.
   if (document.getElementById("polygon").checked) {
@@ -282,6 +301,8 @@ function draw() {
     setMaterialUniforms(kEdgeBlack, kEdgeBlack, kEdgeBlack, shininess);
     myTerrain.drawEdges();
   }
+
+  camInitialPosition = [0, 0, maxElev + 1];
 }
 
 /**
@@ -355,8 +376,86 @@ function setElevationVars(minElevation, maxElevation) {
  * wireframe, polgon, or both.
  */
 function animate(currentTime) {
+  var eulerX = 0;
+  var eulerY = 0;
+  var eulerZ = 0;
+  var EULER_DELTA = 1;
+
+  // Handle key events
+  if (keys["ArrowRight"] || keys["d"]) {
+    eulerX += EULER_DELTA;
+  } else if (keys["ArrowLeft"] || keys["a"]) {
+    eulerX -= EULER_DELTA;
+  } // roll
+
+  if (keys["ArrowUp"] || keys["w"]) {
+    eulerY += EULER_DELTA;
+  } else if (keys["ArrowDown"] || keys["s"]) {
+    eulerY -= EULER_DELTA;
+  } // pitch
+
+  if (keys["+"] || keys["="]) {
+    camSpeed += camDeltaSpeed;
+  } else if (keys["-"] || keys["_"]) {
+    camSpeed -= camDeltaSpeed;
+  } // speed
+  if (camSpeed < camDeltaSpeed) camSpeed = camDeltaSpeed;
+
+  if (keys["Escape"]) {
+    camPosition = camInitialPosition;
+    camOrientation = glMatrix.quat.create();
+  } // reset view
+
+  // Calculate pitch and roll quaternions from Euler
+  var orientationDelta = glMatrix.quat.create();
+  glMatrix.quat.fromEuler(orientationDelta, eulerX, eulerY, eulerZ);
+  glMatrix.quat.mul(camOrientation, camOrientation, orientationDelta);
+
+  // Update position
+  var forwardDirection = glMatrix.vec3.create();
+  glMatrix.vec3.transformQuat(forwardDirection, camInitialDir, camOrientation);
+  glMatrix.vec3.normalize(forwardDirection, forwardDirection);
+  var deltaPos = glMatrix.vec3.scale(
+    forwardDirection,
+    forwardDirection,
+    camSpeed
+  );
+  glMatrix.vec3.add(camPosition, camPosition, deltaPos);
+
+  // Generate new View (lookat) matrix
+  var newUp = [0, 0, 0];
+  glMatrix.vec3.transformQuat(newUp, [0.0, 0.0, 1.0], camOrientation);
+  var newCenter = [0, 0, 0];
+  var currViewDir = [0, 0, 0];
+  glMatrix.vec3.transformQuat(currViewDir, camInitialDir, camOrientation);
+  glMatrix.vec3.add(newCenter, camPosition, currViewDir);
+
+  // Orig values for references
+  // const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, -1.0);
+  // const eyePt = glMatrix.vec3.fromValues(100, 50, 100.0);
+  // const up = glMatrix.vec3.fromValues(0.0, 0.0, 1.0);
+  glMatrix.mat4.lookAt(modelViewMatrix, camPosition, newCenter, newUp);
+
+  console.log(camPosition, camOrientation);
+
   // Draw the frame.
   draw();
   // Animate the next frame.
   requestAnimationFrame(animate);
+}
+
+/**
+ * Handles down key presses to deal with user input
+ * @param {Event} event the registered event
+ */
+function keyDown(event) {
+  keys[event.key] = true;
+}
+
+/**
+ * Handles up key releases to deal with user input
+ * @param {Event} event the registered event
+ */
+function keyUp(event) {
+  keys[event.key] = false;
 }
