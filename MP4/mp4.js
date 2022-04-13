@@ -34,7 +34,7 @@ var kAmbient = [227 / 255, 191 / 255, 76 / 255];
 /** @global Diffuse material color/intensity for Phong reflection */
 var kDiffuse = [227 / 255, 191 / 255, 76 / 255];
 /** @global Specular material color/intensity for Phong reflection */
-var kSpecular = [227 / 255, 191 / 255, 76 / 255];
+var kSpecular = [1.0, 1.0, 1.0];
 /** @global Shininess exponent for Phong reflection */
 var shininess = 2;
 
@@ -61,6 +61,11 @@ var kEdgeBlack = [0.0, 0.0, 0.0];
 /** @global Edge color for white wireframe */
 var kEdgeWhite = [0.7, 0.7, 0.7];
 
+// MY GLOBALS for MP4
+
+/** @global Texture to map onto the mesh */
+var texture;
+
 /**
  * Translates degrees to radians
  * @param {Number} degrees Degree input to function
@@ -79,6 +84,15 @@ function startup() {
   // Set up the canvas with a WebGL context.
   canvas = document.getElementById("glCanvas");
   gl = createGLContext(canvas);
+
+  // Load the texture
+  loadTexture("brick.jpg");
+  // WebGL we want to affect texture unit 0
+  gl.activeTexture(gl.TEXTURE0);
+  // Bind texture to unit 0
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  // Tell the shader where we bound the texture (uniform)
+  gl.uniform1i(shaderProgram.locations.uSampler, 0);
 
   // Compile and link the shader program.
   setupShaders();
@@ -234,6 +248,12 @@ function setupShaders() {
     shaderProgram,
     "specularLightColor"
   );
+
+  // Send texture in uniform!
+  shaderProgram.locations.uSampler = gl.getUniformLocation(
+    shaderProgram,
+    "u_texture"
+  );
 }
 
 /**
@@ -346,4 +366,40 @@ function animate(currentTime) {
   }
   // Animate the next frame.
   requestAnimationFrame(animate);
+}
+
+/**
+ * Load a texture from an image.
+ */
+
+function loadTexture(filename) {
+  // Create a texture.
+  texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  // Fill the texture with a 1x1 blue pixel.
+  gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,
+    gl.RGBA,
+    1,
+    1,
+    0,
+    gl.RGBA,
+    gl.UNSIGNED_BYTE,
+    new Uint8Array([0, 0, 255, 255])
+  );
+
+  // Asynchronously load an image
+  // If image load unsuccessful, it will be a blue surface
+  var image = new Image();
+  image.src = filename;
+  console.log("adding listener to load file ", filename);
+  image.addEventListener("load", function () {
+    // Now that the image has loaded make copy it to the texture.
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    console.log("loaded ", filename);
+  });
 }
