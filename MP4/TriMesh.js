@@ -100,8 +100,7 @@ class TriMesh {
   loadFromOBJ(fileText) {
     //Your code here
 
-    // prettier-ignore
-    var lines = fileText.split('\n');
+    var lines = fileText.split("\n");
     //console.log("Lines: ", lines.length, " ", lines);
 
     for (var i = 0; i < lines.length; i++) {
@@ -109,6 +108,7 @@ class TriMesh {
       //console.log("Words: ", words.length, " ", words);
 
       if (words[0] == "v") {
+        // parse vertices
         const x = parseFloat(words[1]);
         const y = parseFloat(words[2]);
         const z = parseFloat(words[3]);
@@ -117,6 +117,7 @@ class TriMesh {
         this.vBuffer.push(y);
         this.vBuffer.push(z);
       } else if (words[0] == "f") {
+        // parse faces
         const v0 = parseFloat(words[1]);
         const v1 = parseFloat(words[2]);
         const v2 = parseFloat(words[3]);
@@ -125,6 +126,7 @@ class TriMesh {
         this.fBuffer.push(v1 - 1);
         this.fBuffer.push(v2 - 1);
       } else if (words[0] == "#") {
+        // ignore commented lines
         continue;
       }
     }
@@ -423,7 +425,42 @@ class TriMesh {
    */
 
   canonicalTransform() {
-    //Your code here
+    var center = [0, 0, 0];
+    glMatrix.vec3.add(center, this.minXYZ, this.maxXYZ);
+    glMatrix.vec3.scale(center, center, 0.5);
+    // console.log("Canonical center: ", center);
+
+    var sideLengths = [0, 0, 0];
+    glMatrix.vec3.subtract(sideLengths, this.minXYZ, this.maxXYZ);
+    var absSideLengths = sideLengths.map((s) => Math.abs(s));
+    var L = Math.max(...absSideLengths);
+    console.log(
+      "Canonical side lengths: ",
+      sideLengths,
+      "\nAbsolute side lengths: ",
+      absSideLengths,
+      "\nLongest side <L>: ",
+      L
+    );
+
+    var translationVec = [0, 0, 0];
+    glMatrix.vec3.scale(translationVec, center, -1);
+    var scaleVec = [1, 1, 1];
+    glMatrix.vec3.scale(scaleVec, scaleVec, 1 / L);
+
+    //console.log("Canonical translation vec: ", translationVec);
+    //console.log("Canonical scale vec: ", scaleVec);
+
+    var transformMat = glMatrix.mat4.create();
+    var scaleMat = glMatrix.mat4.create();
+    glMatrix.mat4.fromScaling(scaleMat, scaleVec);
+    //console.log("Canonical scale matrix: ", scaleMat);
+    var translationMat = glMatrix.mat4.create();
+    glMatrix.mat4.fromTranslation(translationMat, translationVec);
+    //console.log("Canonical translation matrix: ", translationMat);
+
+    glMatrix.mat4.mul(this.modelMatrix, scaleMat, translationMat);
+    console.log("Canonical transformation matrix: ", this.modelMatrix);
   }
 
   /**
