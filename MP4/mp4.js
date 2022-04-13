@@ -1,5 +1,5 @@
 /**
- * @file MP2.js - A simple WebGL rendering engine
+ * @file MP4.js - A simple WebGL rendering engine
  * @author Ian Rudnick <itr2@illinois.edu>
  * @brief Starter code for CS 418 MP4 at the University of Illinois at
  * Urbana-Champaign.

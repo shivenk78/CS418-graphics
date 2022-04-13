@@ -100,6 +100,35 @@ class TriMesh {
   loadFromOBJ(fileText) {
     //Your code here
 
+    // prettier-ignore
+    var lines = fileText.split('\n');
+    //console.log("Lines: ", lines.length, " ", lines);
+
+    for (var i = 0; i < lines.length; i++) {
+      var words = lines[i].split(/\b\s+(?!$)/);
+      //console.log("Words: ", words.length, " ", words);
+
+      if (words[0] == "v") {
+        const x = parseFloat(words[1]);
+        const y = parseFloat(words[2]);
+        const z = parseFloat(words[3]);
+
+        this.vBuffer.push(x);
+        this.vBuffer.push(y);
+        this.vBuffer.push(z);
+      } else if (words[0] == "f") {
+        const v0 = parseFloat(words[1]);
+        const v1 = parseFloat(words[2]);
+        const v2 = parseFloat(words[3]);
+
+        this.fBuffer.push(v0 - 1);
+        this.fBuffer.push(v1 - 1);
+        this.fBuffer.push(v2 - 1);
+      } else if (words[0] == "#") {
+        continue;
+      }
+    }
+
     this.numVertices = this.vBuffer.length / 3;
     this.numFaces = this.fBuffer.length / 3;
 
