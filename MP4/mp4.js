@@ -66,6 +66,14 @@ var kEdgeWhite = [0.7, 0.7, 0.7];
 /** @global Texture to map onto the mesh */
 var texture;
 
+/** @global True if mouse button is pressed */
+var isMouseDown = false;
+/** @global Mouse coords */
+var x = -1;
+var y = -1;
+/** @global Accumulated rotation around Y-axis (degrees) */
+var rotY = 0;
+
 /**
  * Translates degrees to radians
  * @param {Number} degrees Degree input to function
@@ -112,8 +120,36 @@ function startup() {
     far
   );
 
+  // Mouse listeners
+  canvas.addEventListener("mousedown", (e) => {
+    // x = e.offsetX;
+    // y = e.offsetY;
+    isMouseDown = true;
+  });
+  canvas.addEventListener("mouseup", (e) => {
+    isMouseDown = false;
+  });
+  canvas.addEventListener("mousemove", (e) => {
+    console.log(
+      "Mouse move! ",
+      isMouseDown,
+      "x / y",
+      x,
+      y,
+      " offX / offY",
+      e.offsetX,
+      e.offsetY
+    );
+    if (isMouseDown) {
+      rotY += e.offsetX - x;
+      x = e.offsetX;
+      y = e.offsetY;
+    }
+  });
+
   // Set the background color to sky blue (you can change this if you like).
-  gl.clearColor(0.82, 0.93, 0.99, 1.0);
+  //gl.clearColor(0.82, 0.93, 0.99, 1.0);
+  gl.clearColor(0.1, 0.1, 0.1, 1.0);
 
   gl.enable(gl.DEPTH_TEST);
   requestAnimationFrame(animate);
@@ -267,12 +303,14 @@ function draw() {
 
   // Generate the view matrix using lookat.
   glMatrix.mat4.identity(modelViewMatrix);
-  glMatrix.mat4.lookAt(viewMatrix, eyePt, lookAtPt, up);
-  glMatrix.mat4.multiply(
+  // Perform mouse rotation
+  glMatrix.mat4.rotateY(
     modelViewMatrix,
-    viewMatrix,
-    myMesh.getModelTransform()
+    myMesh.getModelTransform(),
+    degToRad(rotY)
   );
+  glMatrix.mat4.lookAt(viewMatrix, eyePt, lookAtPt, up);
+  glMatrix.mat4.multiply(modelViewMatrix, viewMatrix, modelViewMatrix);
 
   setMatrixUniforms();
   setLightUniforms(
