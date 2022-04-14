@@ -85,21 +85,21 @@ function startup() {
   canvas = document.getElementById("glCanvas");
   gl = createGLContext(canvas);
 
-  // Load the texture
-  loadTexture("brick.jpg");
-  // WebGL we want to affect texture unit 0
-  gl.activeTexture(gl.TEXTURE0);
-  // Bind texture to unit 0
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  // Tell the shader where we bound the texture (uniform)
-  gl.uniform1i(shaderProgram.locations.uSampler, 0);
-
   // Compile and link the shader program.
   setupShaders();
 
   // Let the mesh object set up its own buffers.
   myMesh = new TriMesh();
   myMesh.readFile("teapot.obj");
+
+  // Load the texture
+  loadTexture("lava.jpeg");
+  // WebGL we want to affect texture unit 0
+  gl.activeTexture(gl.TEXTURE0);
+  // Bind texture to unit 0
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  // Tell the shader where we bound the texture (uniform)
+  gl.uniform1i(shaderProgram.locations.uTexture, 0);
 
   // Generate the projection matrix using perspective projection.
   const near = 0.1;
@@ -250,9 +250,9 @@ function setupShaders() {
   );
 
   // Send texture in uniform!
-  shaderProgram.locations.uSampler = gl.getUniformLocation(
+  shaderProgram.locations.uTexture = gl.getUniformLocation(
     shaderProgram,
-    "u_texture"
+    "uTexture"
   );
 }
 

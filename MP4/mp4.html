@@ -38,11 +38,11 @@ out vec2 v_texcoord;
 
 
 void main(void) {
+    v_texcoord = vertexPosition.xy;
+
     // Transform the vertex position and normal to view coordinates
     fragPosition =(modelViewMatrix * vec4(vertexPosition, 1.0)).xyz;
     fragNormal = normalize(normalMatrix * vertexNormal);
-
-    v_texcoord = vertexPosition.xy;
     
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
     //v_texcoord = gl_Position.xy;
@@ -71,15 +71,16 @@ uniform vec3 ambientLightColor;
 uniform vec3 diffuseLightColor;
 uniform vec3 specularLightColor;
 
+// NEW uniform VARS
+uniform sampler2D uTexture;
+
 in vec3 fragPosition;
 in vec3 fragNormal;
 
-out vec4 fragmentColor;
-
-// NEW VARS
-uniform sampler2D u_texture;
-
+// NEW in VARS
 in vec2 v_texcoord;
+
+out vec4 fragmentColor;
 
 void main(void) {
     // The camera is at the origin in view coordinates
@@ -100,7 +101,7 @@ void main(void) {
     float specularWeight = pow(rDotV, shininess);
 
     // Sample Texture
-    vec4 texColor = texture(u_texture, v_texcoord);
+    vec4 texColor = texture(uTexture, v_texcoord);
 
     // Sum up all three lighting components into the color for the vertex,
     // and send it to the fragment shader.
