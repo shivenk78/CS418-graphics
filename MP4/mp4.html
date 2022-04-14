@@ -45,7 +45,8 @@ void main(void) {
     fragNormal = normalize(normalMatrix * vertexNormal);
     
     gl_Position = projectionMatrix * modelViewMatrix * vec4(vertexPosition, 1.0);
-    //v_texcoord = gl_Position.xy; // causes the texture to map across the whole view, rather than tile on the object
+    //v_texcoord = gl_Position.xy; // causes the texture to map across the whole view, rather than tile on the object. 
+    //Thus, the texture does NOT rotate with object. As if you were projecting with a literal projector.
 }
 </script>
 
