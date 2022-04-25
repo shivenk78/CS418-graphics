@@ -34,7 +34,7 @@ var kAmbient = [0.25, 0.75, 1.0];
 /** @global Diffuse material color/intensity for Phong reflection */
 var kDiffuse = [0.25, 0.75, 1.0];
 /** @global Specular material color/intensity for Phong reflection */
-var kSpecular = [0.25, 0.75, 1.0];
+var kSpecular = [1.0, 1.0, 1.0];
 /** @global Shininess exponent for Phong reflection */
 var shininess = 2;
 
@@ -44,6 +44,26 @@ const lAmbient = [0.4, 0.4, 0.4];
 const lDiffuse = [1.0, 1.0, 1.0];
 /** @global Specular  light color */
 const lSpecular = [1.0, 1.0, 1.0];
+
+/** MY NEW VARS */
+/** @global Dimension of box. Represents distance in every direction from Origin. Thus, the box will be of size (2*BOX_DIM, 2*BOX_DIM, 2*BOX_DIM) */
+const BOX_DIM = 100;
+/** @global Gravity acceleration constant */
+const GRAV = -10;
+/** @global Number of spheres to add on keypress */
+const N_SPHERES = 5;
+
+/** @global Dictionary of pressed keys */
+var keys = {};
+
+/** @global Sphere positions */
+var spherePos = [];
+/** @global Sphere velocities */
+var sphereVel = [];
+/** @global Sphere radii */
+var sphereRad = [];
+/** @global Sphere colors */
+var sphereCol = [];
 
 /**
  * Translates degrees to radians
@@ -60,9 +80,14 @@ function degToRad(degrees) {
  * Startup function called from the HTML code to start program.
  */
 function startup() {
+  console.log("hi");
   // Set up the canvas with a WebGL context.
   canvas = document.getElementById("glCanvas");
   gl = createGLContext(canvas);
+
+  // Register key event handlers
+  document.onkeydown = keyDown;
+  document.onkeyup = keyUp;
 
   // Compile and link a shader program.
   setupShaders();
@@ -232,6 +257,28 @@ function setupShaders() {
 function animate(currentTime) {
   // Add code here using currentTime if you want to add animations
 
+  // check keypresses for spheres
+  if (keys["a"]) {
+    // add spheres
+    for (var i = 0; i < N_SPHERES; i++) {
+      createSphere();
+    }
+    console.log(
+      spherePos.length,
+      sphereVel.length,
+      sphereRad.length,
+      sphereCol.length
+    );
+    keys["a"] = false; // helps with "debouncing" to avoid repeated presses
+  } else if (keys["r"]) {
+    // clear spheres
+    spherePos = [];
+    sphereVel = [];
+    sphereRad = [];
+    sphereCol = [];
+    keys["r"] = false;
+  }
+
   // Set up the canvas for this frame
   gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -262,7 +309,14 @@ function animate(currentTime) {
   // setMatrixUniforms() again, and calling gl.drawArrays() again for each
   // sphere. You can use the same sphere object and VAO for all of them,
   // since they have the same triangle mesh.
+
+  // TODO: delete this
+  //   glMatrix.mat4.multiplyScalar(modelMatrix, modelMatrix, 2);
+  //   glMatrix.mat4.multiply(modelViewMatrix, viewMatrix, modelMatrix);
+  //   setMatrixUniforms();
+
   sphere1.bindVAO();
+  for (var i = 0; i < spherePos.length; i++) {}
   gl.drawArrays(gl.TRIANGLES, 0, sphere1.numTriangles * 3);
   sphere1.unbindVAO();
 
@@ -324,4 +378,56 @@ function setLightUniforms(a, d, s, loc) {
   gl.uniform3fv(shaderProgram.locations.diffuseLightColor, d);
   gl.uniform3fv(shaderProgram.locations.specularLightColor, s);
   gl.uniform3fv(shaderProgram.locations.lightPosition, loc);
+}
+
+/**
+ * Creates a sphere, with appropriate random position, velocity, etc.
+ */
+function createSphere() {
+  var col = kDiffuse;
+  var rad = randValInRange(1, 5);
+  const dimMinusRad = BOX_DIM - rad - 1;
+  var pos = [
+    randValInRange(-dimMinusRad, dimMinusRad),
+    randValInRange(-dimMinusRad, dimMinusRad),
+    randValInRange(-dimMinusRad, dimMinusRad),
+  ];
+  //console.log("New random pos: ", pos);
+
+  // create a random velocity direction, scaled randomly in a range.
+  var vel_mag = randValInRange(1, 3);
+  var vel = [0, 0, 0];
+  glMatrix.vec3.random(vel, vel_mag);
+  //console.log("New random vel: ", vel);
+
+  spherePos.push(pos);
+  sphereVel.push(vel);
+  sphereRad.push(rad);
+  sphereCol.push(col);
+}
+
+/**
+ * Get a random value in a range
+ * @param {Float} low
+ * @param {Float} hi
+ * @returns Float value in range [low, hi)
+ */
+function randValInRange(low, hi) {
+  return Math.random() * (hi - low) + low;
+}
+
+/**
+ * Handles down key presses to deal with user input
+ * @param {Event} event the registered event
+ */
+function keyDown(event) {
+  keys[event.key] = true;
+}
+
+/**
+ * Handles up key releases to deal with user input
+ * @param {Event} event the registered event
+ */
+function keyUp(event) {
+  keys[event.key] = false;
 }
