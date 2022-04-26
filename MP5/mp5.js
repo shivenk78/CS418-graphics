@@ -47,7 +47,7 @@ const lSpecular = [1.0, 1.0, 1.0];
 
 /** MY NEW VARS */
 /** @global Dimension of box. Represents distance in every direction from Origin. Thus, the box will be of size (2*BOX_DIM, 2*BOX_DIM, 2*BOX_DIM) */
-const BOX_DIM = 100;
+const BOX_DIM = 50;
 /** @global Gravity acceleration constant */
 const GRAV = -10;
 /** @global Number of spheres to add on keypress */
@@ -100,8 +100,8 @@ function startup() {
   sphere1.setupBuffers(shaderProgram);
 
   // Create the projection matrix with perspective projection.
-  const near = 0.1;
-  const far = 200.0;
+  const near = -100.0;
+  const far = 100.0;
   glMatrix.mat4.perspective(
     projectionMatrix,
     degToRad(45),
@@ -299,7 +299,7 @@ function animate(currentTime) {
 
   // Create the view matrix using lookat.
   const lookAtPt = glMatrix.vec3.fromValues(0.0, 0.0, 0.0);
-  const eyePt = glMatrix.vec3.fromValues(0.0, 0.0, 10.0);
+  const eyePt = glMatrix.vec3.fromValues(0.0, 0.0, 200.0);
   const up = glMatrix.vec3.fromValues(0.0, 1.0, 0.0);
   glMatrix.mat4.lookAt(viewMatrix, eyePt, lookAtPt, up);
 
@@ -331,15 +331,11 @@ function animate(currentTime) {
   var radiusMat = glMatrix.mat4.create();
   for (var i = 0; i < spherePos.length; i++) {
     // update position and velocity
-    if (i == 1)
-      console.log(i, currentTime, deltaTime, spherePos[i], sphereRad[i]);
+
     // create the translated and scaled matrix for this particle's position and radius
     glMatrix.mat4.fromTranslation(translationMat, spherePos[i]);
     var radiusVec = [sphereRad[i], sphereRad[i], sphereRad[i]];
-    if (i == 1) console.log(radiusVec);
     glMatrix.mat4.fromScaling(radiusMat, radiusVec);
-
-    //if (i == 1) console.log(translationMat, radiusMat);
 
     // create the new model matrix
     glMatrix.mat4.multiply(modelMatrix, translationMat, radiusMat);
@@ -358,6 +354,13 @@ function animate(currentTime) {
 
     // draw
     gl.drawArrays(gl.TRIANGLES, 0, sphere1.numTriangles * 3);
+
+    if (
+      Math.abs(spherePos[i][0]) >= BOX_DIM ||
+      Math.abs(spherePos[i][1]) >= BOX_DIM ||
+      Math.abs(spherePos[i][2]) >= BOX_DIM
+    )
+      console.log("OOB - ", spherePos[i], i);
   }
   sphere1.unbindVAO();
 
@@ -425,16 +428,13 @@ function setLightUniforms(a, d, s, loc) {
  * Creates a sphere, with appropriate random position, velocity, etc.
  */
 function createSphere() {
-  var col = kDiffuse;
+  var col = [Math.random(), Math.random(), Math.random()];
   var rad = randValInRange(1, 5);
   const dimMinusRad = BOX_DIM - rad - 1;
   var pos = [
-    // randValInRange(-dimMinusRad, dimMinusRad),
-    // randValInRange(-dimMinusRad, dimMinusRad),
-    // randValInRange(-dimMinusRad, dimMinusRad),
-    randValInRange(-1, 1),
-    randValInRange(-1, 1),
-    randValInRange(-1, 1),
+    randValInRange(-dimMinusRad, dimMinusRad),
+    randValInRange(-dimMinusRad, dimMinusRad),
+    randValInRange(-dimMinusRad, dimMinusRad),
   ];
   //console.log("New random pos: ", pos);
 
