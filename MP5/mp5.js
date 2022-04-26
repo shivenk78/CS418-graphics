@@ -437,10 +437,9 @@ function createSphere() {
   //console.log("New random pos: ", pos);
 
   // create a random velocity direction, scaled randomly in a range.
-  var vel_mag = randValInRange(1, 3);
+  var vel_mag = randValInRange(1, 2 * Math.abs(GRAV));
   var vel = [0, 0, 0];
-  // TODO: randomize vel
-  //glMatrix.vec3.random(vel, vel_mag);
+  glMatrix.vec3.random(vel, vel_mag);
   //console.log("New random vel: ", vel);
 
   spherePos.push(pos);
