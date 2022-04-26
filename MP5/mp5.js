@@ -54,6 +54,8 @@ const GRAV = -100;
 const GRAV_VEC = [0, GRAV, 0];
 /** @global Drag constant */
 const DRAG = 0.5;
+/** @global Bounce constant c */
+const BOUNCE_C = 0.8;
 /** @global Number of spheres to add on keypress */
 const N_SPHERES = 5;
 
@@ -71,6 +73,9 @@ var sphereCol = [];
 
 /** @global Previous animation time */
 var previousTime = 0;
+
+/** @global Array of the 6 wall normals */
+var wallNormals = [];
 
 /**
  * Translates degrees to radians
@@ -102,6 +107,12 @@ function startup() {
   // Create a sphere mesh and set up WebGL buffers for it.
   sphere1 = new Sphere(5);
   sphere1.setupBuffers(shaderProgram);
+
+  // Generate wall normals
+  createWallNormals();
+
+  // Create ONE sphere to start
+  createSphere();
 
   // Create the projection matrix with perspective projection.
   const near = -100.0;
@@ -469,7 +480,60 @@ function performPhysicsUpdate(s, deltaTime) {
   glMatrix.vec3.scale(velTerm, sphereVel[s], deltaTime);
   glMatrix.vec3.add(spherePos[s], spherePos[s], velTerm);
 
-  // collision with walls GO HERE
+  // collision with walls - iterate through the axes
+  // wall
+  var min_t = Infinity;
+  var wallNormal = [0, 0, 0];
+  for (var i = 0; i < 3; i++) {
+    var p = spherePos[s][i];
+    if (p + sphereRad[s] >= BOX_DIM) {
+      var t = (BOX_DIM - sphereRad[s] - initPosition[i]) / sphereVel[s][i];
+      if (t < min_t) {
+        min_t = t;
+        // too far in POSITIVE direction, so wall 2*i+1
+        wallNormal = wallNormals[2 * i + 1];
+      }
+    } else if (p - sphereRad[s] <= -BOX_DIM) {
+      var t = (BOX_DIM - sphereRad[s] - initPosition[i]) / sphereVel[s][i];
+      if (t < min_t) {
+        min_t = t;
+        // too far in NEGATIVE direction, so wall 2*i
+        wallNormal = wallNormals[2 * i];
+      }
+    }
+  }
+
+  // if collided, move the sphere!
+  if (min_t !== Infinity) {
+    // v2 = v1 - 2 * (v1 . n) * n
+    var velDotNorm = glMatrix.vec3.dot(sphereVel[s], wallNormal);
+    var scaledNorm = glMatrix.vec3.clone(wallNormal);
+    glMatrix.vec3.scale(scaledNorm, scaledNorm, 2 * velDotNorm);
+    var newVel = [0, 0, 0];
+    glMatrix.vec3.sub(newVel, sphereVel[s], scaledNorm);
+    // ||v2|| = c ||v1||
+    console.log("Pre-bounce: ", sphereVel[s], wallNormal);
+    glMatrix.vec3.scale(sphereVel[s], newVel, BOUNCE_C);
+    console.log("Post-bounce: ", sphereVel[s]);
+  }
+}
+
+/**
+ * Creates the wall normals, all as unit vectors.
+ * The wall at positive BOX_DIM of an axis 'i' is at index 2*i+1.
+ */
+function createWallNormals() {
+  for (var i = 0; i < 3; i++) {
+    var posWall = [0, 0, 0];
+    var negWall = [0, 0, 0];
+
+    posWall[i] = 1;
+    negWall[i] = -1;
+
+    wallNormals.push(posWall);
+    wallNormals.push(negWall);
+  }
+  console.log("Created normals: ", wallNormals);
 }
 
 /**
