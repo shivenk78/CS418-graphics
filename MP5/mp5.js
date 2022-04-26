@@ -49,7 +49,11 @@ const lSpecular = [1.0, 1.0, 1.0];
 /** @global Dimension of box. Represents distance in every direction from Origin. Thus, the box will be of size (2*BOX_DIM, 2*BOX_DIM, 2*BOX_DIM) */
 const BOX_DIM = 50;
 /** @global Gravity acceleration constant */
-const GRAV = -10;
+const GRAV = -100;
+/** @global Gravity acceleration vector */
+const GRAV_VEC = [0, GRAV, 0];
+/** @global Drag constant */
+const DRAG = 0.5;
 /** @global Number of spheres to add on keypress */
 const N_SPHERES = 5;
 
@@ -331,6 +335,7 @@ function animate(currentTime) {
   var radiusMat = glMatrix.mat4.create();
   for (var i = 0; i < spherePos.length; i++) {
     // update position and velocity
+    performPhysicsUpdate(i, deltaTime);
 
     // create the translated and scaled matrix for this particle's position and radius
     glMatrix.mat4.fromTranslation(translationMat, spherePos[i]);
@@ -354,13 +359,6 @@ function animate(currentTime) {
 
     // draw
     gl.drawArrays(gl.TRIANGLES, 0, sphere1.numTriangles * 3);
-
-    if (
-      Math.abs(spherePos[i][0]) >= BOX_DIM ||
-      Math.abs(spherePos[i][1]) >= BOX_DIM ||
-      Math.abs(spherePos[i][2]) >= BOX_DIM
-    )
-      console.log("OOB - ", spherePos[i], i);
   }
   sphere1.unbindVAO();
 
@@ -441,13 +439,38 @@ function createSphere() {
   // create a random velocity direction, scaled randomly in a range.
   var vel_mag = randValInRange(1, 3);
   var vel = [0, 0, 0];
-  glMatrix.vec3.random(vel, vel_mag);
+  // TODO: randomize vel
+  //glMatrix.vec3.random(vel, vel_mag);
   //console.log("New random vel: ", vel);
 
   spherePos.push(pos);
   sphereVel.push(vel);
   sphereRad.push(rad);
   sphereCol.push(col);
+}
+
+/**
+ * Performs physics updates - velocity, position, collision, etc.
+ * @param {Integer} s Index of the sphere to modify
+ * @param {Float} deltaTime Time change for physics update
+ */
+function performPhysicsUpdate(s, deltaTime) {
+  // velocity
+  // v_new = v * drag^t + accel * t
+  glMatrix.vec3.scale(sphereVel[s], sphereVel[s], Math.pow(DRAG, deltaTime));
+  var accelTerm = [0, 0, 0];
+  glMatrix.vec3.scale(accelTerm, GRAV_VEC, deltaTime);
+  glMatrix.vec3.add(sphereVel[s], sphereVel[s], accelTerm);
+  //if (s == 0) console.log(sphereVel[s], accelTerm, spherePos[s]);
+
+  // position
+  // pos_new = pos + v * t
+  var initPosition = glMatrix.vec3.clone(spherePos[s]);
+  var velTerm = [0, 0, 0];
+  glMatrix.vec3.scale(velTerm, sphereVel[s], deltaTime);
+  glMatrix.vec3.add(spherePos[s], spherePos[s], velTerm);
+
+  // collision with walls GO HERE
 }
 
 /**
