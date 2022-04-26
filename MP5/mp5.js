@@ -65,6 +65,9 @@ var sphereRad = [];
 /** @global Sphere colors */
 var sphereCol = [];
 
+/** @global Previous animation time */
+var previousTime = 0;
+
 /**
  * Translates degrees to radians
  * @param {Number} degrees Degree input to function
@@ -257,6 +260,14 @@ function setupShaders() {
 function animate(currentTime) {
   // Add code here using currentTime if you want to add animations
 
+  // from mp1
+  // Convert the time to seconds.
+  currentTime *= 0.001;
+  // Subtract the previous time from the current time.
+  var deltaTime = currentTime - previousTime;
+  // Remember the current time for the next frame.
+  previousTime = currentTime;
+
   // check keypresses for spheres
   if (keys["a"]) {
     // add spheres
@@ -316,8 +327,38 @@ function animate(currentTime) {
   //   setMatrixUniforms();
 
   sphere1.bindVAO();
-  for (var i = 0; i < spherePos.length; i++) {}
-  gl.drawArrays(gl.TRIANGLES, 0, sphere1.numTriangles * 3);
+  var translationMat = glMatrix.mat4.create();
+  var radiusMat = glMatrix.mat4.create();
+  for (var i = 0; i < spherePos.length; i++) {
+    // update position and velocity
+    if (i == 1)
+      console.log(i, currentTime, deltaTime, spherePos[i], sphereRad[i]);
+    // create the translated and scaled matrix for this particle's position and radius
+    glMatrix.mat4.fromTranslation(translationMat, spherePos[i]);
+    var radiusVec = [sphereRad[i], sphereRad[i], sphereRad[i]];
+    if (i == 1) console.log(radiusVec);
+    glMatrix.mat4.fromScaling(radiusMat, radiusVec);
+
+    //if (i == 1) console.log(translationMat, radiusMat);
+
+    // create the new model matrix
+    glMatrix.mat4.multiply(modelMatrix, translationMat, radiusMat);
+
+    // Concatenate the model and view matrices.
+    // Remember matrix multiplication order is important.
+    glMatrix.mat4.multiply(modelViewMatrix, viewMatrix, modelMatrix);
+
+    // set colors
+    kAmbient = sphereCol[i];
+    kDiffuse = sphereCol[i];
+
+    // set uniforms for shaders
+    setMatrixUniforms();
+    setMaterialUniforms(kAmbient, kDiffuse, kSpecular, shininess);
+
+    // draw
+    gl.drawArrays(gl.TRIANGLES, 0, sphere1.numTriangles * 3);
+  }
   sphere1.unbindVAO();
 
   // Use this function as the callback to animate the next frame.
@@ -388,9 +429,12 @@ function createSphere() {
   var rad = randValInRange(1, 5);
   const dimMinusRad = BOX_DIM - rad - 1;
   var pos = [
-    randValInRange(-dimMinusRad, dimMinusRad),
-    randValInRange(-dimMinusRad, dimMinusRad),
-    randValInRange(-dimMinusRad, dimMinusRad),
+    // randValInRange(-dimMinusRad, dimMinusRad),
+    // randValInRange(-dimMinusRad, dimMinusRad),
+    // randValInRange(-dimMinusRad, dimMinusRad),
+    randValInRange(-1, 1),
+    randValInRange(-1, 1),
+    randValInRange(-1, 1),
   ];
   //console.log("New random pos: ", pos);
 
