@@ -79,10 +79,6 @@ var previousTime = 0;
 /** @global Array of the 6 wall normals */
 var wallNormals = [];
 
-// TODO: delete this
-/** @global Counts TOTAL bounces registered so far (DEBUGGING) */
-var bounceCount = 0;
-
 /**
  * Translates degrees to radians
  * @param {Number} degrees Degree input to function
@@ -98,7 +94,6 @@ function degToRad(degrees) {
  * Startup function called from the HTML code to start program.
  */
 function startup() {
-  console.log("hi");
   // Set up the canvas with a WebGL context.
   canvas = document.getElementById("glCanvas");
   gl = createGLContext(canvas);
@@ -295,12 +290,7 @@ function animate(currentTime) {
     for (var i = 0; i < N_SPHERES; i++) {
       createSphere();
     }
-    console.log(
-      spherePos.length,
-      sphereVel.length,
-      sphereRad.length,
-      sphereCol.length
-    );
+    console.log("Simulation now contains ", spherePos.length, " spheres");
     keys["a"] = false; // helps with "debouncing" to avoid repeated presses
   } else if (keys["r"]) {
     // clear spheres
@@ -309,6 +299,7 @@ function animate(currentTime) {
     sphereRad = [];
     sphereCol = [];
     keys["r"] = false;
+    console.log("Simulation cleared. 0 spheres");
   }
 
   // Set up the canvas for this frame
@@ -341,11 +332,6 @@ function animate(currentTime) {
   // setMatrixUniforms() again, and calling gl.drawArrays() again for each
   // sphere. You can use the same sphere object and VAO for all of them,
   // since they have the same triangle mesh.
-
-  // TODO: delete this
-  //   glMatrix.mat4.multiplyScalar(modelMatrix, modelMatrix, 2);
-  //   glMatrix.mat4.multiply(modelViewMatrix, viewMatrix, modelMatrix);
-  //   setMatrixUniforms();
 
   sphere1.bindVAO();
   var translationMat = glMatrix.mat4.create();
@@ -451,13 +437,11 @@ function createSphere() {
     randValInRange(-dimMinusRad, dimMinusRad),
     randValInRange(-dimMinusRad, dimMinusRad),
   ];
-  //console.log("New random pos: ", pos);
 
   // create a random velocity direction, scaled randomly in a range.
   var vel_mag = randValInRange(1, 10 * Math.abs(GRAV));
   var vel = [0, 0, 0];
   glMatrix.vec3.random(vel, vel_mag);
-  //console.log("New random vel: ", vel);
 
   spherePos.push(pos);
   sphereVel.push(vel);
@@ -478,7 +462,6 @@ function performPhysicsUpdate(s, deltaTime) {
   var accelTerm = [0, 0, 0];
   glMatrix.vec3.scale(accelTerm, GRAV_VEC, deltaTime);
   glMatrix.vec3.add(sphereVel[s], sphereVel[s], accelTerm);
-  //if (s == 0) console.log(sphereVel[s], accelTerm, spherePos[s]);
 
   // position
   // pos_new = pos + v * t
@@ -522,7 +505,6 @@ function performPhysicsUpdate(s, deltaTime) {
     // ||v2|| = c ||v1||
     glMatrix.vec3.scale(newVel, newVel, BOUNCE_C);
     sphereVel[s] = newVel;
-    bounceCount++;
 
     // re-update position
     // pos_col = initPos + t * v
