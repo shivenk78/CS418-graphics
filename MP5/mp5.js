@@ -70,12 +70,18 @@ var sphereVel = [];
 var sphereRad = [];
 /** @global Sphere colors */
 var sphereCol = [];
+/** @global Spheres which are at rest on the ground */
+var spheresAtRest = [];
 
 /** @global Previous animation time */
 var previousTime = 0;
 
 /** @global Array of the 6 wall normals */
 var wallNormals = [];
+
+// TODO: delete this
+/** @global Counts TOTAL bounces registered so far (DEBUGGING) */
+var bounceCount = 0;
 
 /**
  * Translates degrees to radians
@@ -448,7 +454,7 @@ function createSphere() {
   //console.log("New random pos: ", pos);
 
   // create a random velocity direction, scaled randomly in a range.
-  var vel_mag = randValInRange(1, 2 * Math.abs(GRAV));
+  var vel_mag = randValInRange(1, 10 * Math.abs(GRAV));
   var vel = [0, 0, 0];
   glMatrix.vec3.random(vel, vel_mag);
   //console.log("New random vel: ", vel);
@@ -457,6 +463,7 @@ function createSphere() {
   sphereVel.push(vel);
   sphereRad.push(rad);
   sphereCol.push(col);
+  spheresAtRest.push(false);
 }
 
 /**
@@ -476,6 +483,7 @@ function performPhysicsUpdate(s, deltaTime) {
   // position
   // pos_new = pos + v * t
   var initPosition = glMatrix.vec3.clone(spherePos[s]);
+  var initVel = glMatrix.vec3.clone(sphereVel[s]);
   var velTerm = [0, 0, 0];
   glMatrix.vec3.scale(velTerm, sphereVel[s], deltaTime);
   glMatrix.vec3.add(spherePos[s], spherePos[s], velTerm);
@@ -494,7 +502,7 @@ function performPhysicsUpdate(s, deltaTime) {
         wallNormal = wallNormals[2 * i + 1];
       }
     } else if (p - sphereRad[s] <= -BOX_DIM) {
-      var t = (BOX_DIM - sphereRad[s] - initPosition[i]) / sphereVel[s][i];
+      var t = (-BOX_DIM + sphereRad[s] - initPosition[i]) / sphereVel[s][i];
       if (t < min_t) {
         min_t = t;
         // too far in NEGATIVE direction, so wall 2*i
@@ -503,7 +511,7 @@ function performPhysicsUpdate(s, deltaTime) {
     }
   }
 
-  // if collided, move the sphere!
+  // if collided, resolve the collision!
   if (min_t !== Infinity) {
     // v2 = v1 - 2 * (v1 . n) * n
     var velDotNorm = glMatrix.vec3.dot(sphereVel[s], wallNormal);
@@ -512,9 +520,15 @@ function performPhysicsUpdate(s, deltaTime) {
     var newVel = [0, 0, 0];
     glMatrix.vec3.sub(newVel, sphereVel[s], scaledNorm);
     // ||v2|| = c ||v1||
-    console.log("Pre-bounce: ", sphereVel[s], wallNormal);
-    glMatrix.vec3.scale(sphereVel[s], newVel, BOUNCE_C);
-    console.log("Post-bounce: ", sphereVel[s]);
+    glMatrix.vec3.scale(newVel, newVel, BOUNCE_C);
+    sphereVel[s] = newVel;
+    bounceCount++;
+
+    // re-update position
+    // pos_col = initPos + t * v
+    var velTerm = [0, 0, 0];
+    glMatrix.vec3.scale(velTerm, initVel, min_t);
+    glMatrix.vec3.add(spherePos[s], initPosition, velTerm);
   }
 }
 
